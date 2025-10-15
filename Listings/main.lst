@@ -1,0 +1,185 @@
+C51 COMPILER V9.54   MAIN                                                                  05/20/2025 23:37:15 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main.ls
+                    -t) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <REGX52.H>
+   2          #include "LCD1602.h"
+   3          #include "Delay.h"
+   4          #include "DS18B20.h"
+   5          #include "AT24C02.h"
+   6          #include "Key.h"
+   7          #include "Timer0.h"
+   8          
+   9          sbit BEEP = P2^5;
+  10          sbit FUN = P1^0;
+  11          
+  12          float T,TShow;                                          //温度
+  13          int TX;                                                         //温度小数位
+  14          char THigh;                                                     //温度报警线
+  15          unsigned char KeyNum;                           //按下的独立按键键值
+  16          unsigned char Beep;                                     //蜂鸣器状态
+  17          unsigned char Warn;                                     //警报解除
+  18          
+  19          
+  20          
+  21          
+  22          
+  23          void main()
+  24          {
+  25   1              THigh = AT24C02_ReadByte(0);                            //读取报警阈值
+  26   1              if(THigh>125 || THigh<-55)              //判断阈值是否合理，如不合理赋予默认值
+  27   1              {
+  28   2                      THigh = 30;
+  29   2              }
+  30   1              DS18B20_ConvertT();                                                     //清除温度传感器的初始值
+  31   1              Delay(1000);
+  32   1              Timer0_Init();                                                          //初始化定时器0
+  33   1              LCD_Init();                                                                     //LCD初始化 
+  34   1              LCD_ShowString(1,1,"T:");
+  35   1              LCD_ShowString(2,1,"TH:");
+  36   1                      
+  37   1              while(1)
+  38   1              {
+  39   2                      KeyNum = Key();                                                 //读取按键值
+  40   2                      
+  41   2                      /*温度读取及显示*/
+  42   2      
+  43   2                      if(T<0)
+  44   2                      {
+  45   3                              LCD_ShowChar(1,3,'-');
+  46   3                              TShow = -T;
+  47   3                      }
+  48   2                      else
+  49   2                      {
+  50   3                              TShow = T;
+  51   3                              LCD_ShowChar(1,3,'+');
+  52   3                      }
+  53   2                      TX = (unsigned long)(TShow*100)&100;    //求出温度的两位小数位
+  54   2                      LCD_ShowNum(1,4,TShow,3);                               //显示温度整数部分
+C51 COMPILER V9.54   MAIN                                                                  05/20/2025 23:37:15 PAGE 2   
+
+  55   2                      LCD_ShowChar(1,7,'.');                                  //显示小数点
+  56   2                      LCD_ShowNum(1,8,TX,2);                                  //显示温度小数部分
+  57   2      
+  58   2                      
+  59   2                      /*阈值判断及显示*/
+  60   2                      
+  61   2                      if(KeyNum)
+  62   2                      {
+  63   3                              if(KeyNum == 1)                                         //按键1按下THigh加1
+  64   3                              {
+  65   4                                      THigh++;
+  66   4                                      if(THigh > 125){THigh=125;}
+  67   4                              }
+  68   3                              if(KeyNum == 2)                                         //按键1按下THigh减1
+  69   3                              {
+  70   4                                      THigh--;
+  71   4                                      if(THigh < -55){THigh=-55;}
+  72   4                              }
+  73   3                              if(KeyNum == 3)                                         //按键3按下存储温度阈值设置
+  74   3                              {
+  75   4                                      AT24C02_WhiteByte(0,THigh);     
+  76   4                              }
+  77   3                              if(KeyNum == 4)                                         //按键4按下解除警报，10秒后若温度还超过安全阈值，警报继�
+             -�
+  78   3                              {
+  79   4                                      Warn = 1;       
+  80   4                              }
+  81   3                              
+  82   3                      }       
+  83   2                      LCD_ShowSignedNum(2,4,THigh,3);                 //显示温度报警线
+  84   2                                      
+  85   2                      /*温度状态判断及显示*/
+  86   2                      
+  87   2                      if(T>THigh && Warn == 0)                                //温度过高且，未手动解除警报，声光报警，风扇开启
+  88   2                      {
+  89   3                              LCD_ShowString(1,10,"  High ");
+  90   3                              LCD_ShowString(2,8,"   !!!!!!");
+  91   3                              Beep = 1;
+  92   3                              FUN = 1;
+  93   3                              P2 &= 0xE0;
+  94   3                      }
+  95   2                      else if(T>THigh && Warn == 1)                   //温度过高且，手动解除警报，声光报警解除，风扇开�
+             -��
+  96   2                      {
+  97   3                              LCD_ShowString(1,10,"  High ");
+  98   3                              LCD_ShowString(2,8,"   !!!!!!");                                
+  99   3                              Beep = 0;
+ 100   3                              FUN = 1;
+ 101   3                              P2 |= 0x1F;
+ 102   3                      }
+ 103   2                      else
+ 104   2                      {
+ 105   3                              LCD_ShowString(1,10," Normal");
+ 106   3                              LCD_ShowString(2,8,"         ");
+ 107   3                              Beep = 0;
+ 108   3                              FUN = 0;        
+ 109   3                              P2 |= 0x1F;
+ 110   3                      }
+ 111   2      
+ 112   2              }
+ 113   1              
+ 114   1      }
+C51 COMPILER V9.54   MAIN                                                                  05/20/2025 23:37:15 PAGE 3   
+
+ 115          
+ 116          
+ 117          /*定时器0中断函数*/
+ 118          
+ 119          void Timer0_Rountine() interrupt 1      
+ 120          {
+ 121   1              static unsigned int T0Count1,T0Count2,T0Count3,T0Count4;
+ 122   1      
+ 123   1              TL0 = 0x66;                                     //设置定时初值
+ 124   1              TH0 = 0xFC;                                     //设置定时初值
+ 125   1              T0Count1++;
+ 126   1              T0Count2++;
+ 127   1              T0Count3++;
+ 128   1              if(Warn){T0Count4++;}
+ 129   1                      
+ 130   1              
+ 131   1              if(T0Count1 >= 20)                      
+ 132   1              {
+ 133   2                      T0Count1 = 0;
+ 134   2                      Key_Loop();                             //扫描独立按键
+ 135   2              }
+ 136   1              if(T0Count2 >= 10)                      //每隔10ms对温度进行扫描
+ 137   1              {
+ 138   2                      T0Count2 = 0;
+ 139   2                      DS18B20_ConvertT();
+ 140   2                      T = DS18B20_ReadT();
+ 141   2              }
+ 142   1              if(T0Count3 >= 50)                      //每隔10ms对温度进行扫描
+ 143   1              {
+ 144   2                      T0Count3 = 0;
+ 145   2                      if(Beep)
+ 146   2                      {
+ 147   3                              BEEP = ~BEEP;
+ 148   3                      }       
+ 149   2              }
+ 150   1              if(T0Count4 >= 10000)                   //每隔10ms对温度进行扫描
+ 151   1              {
+ 152   2                      T0Count4 = 0;
+ 153   2                      Warn = 0;
+ 154   2              }
+ 155   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    659    ----
+   CONSTANT SIZE    =     43    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     22    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

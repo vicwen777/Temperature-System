@@ -1,0 +1,76 @@
+C51 COMPILER V9.54   AT24C02                                                               05/20/2025 17:21:47 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE AT24C02
+OBJECT MODULE PLACED IN .\Objects\AT24C02.obj
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE AT24C02.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\AT24
+                    -C02.lst) OBJECT(.\Objects\AT24C02.obj)
+
+line level    source
+
+   1          #include <REGX52.H>
+   2          #include "I2C.h"
+   3          #include "Delay.h"
+   4          
+   5          #define AT24C02_ADDRESS         0xA0
+   6          
+   7          /**
+   8            * @brief      在AT24C02中写入一个字节
+   9            * @param  WordAddress 要写入字节的地址（0~255）
+  10            * @param      Data            要写入的数据
+  11            * @retval 无
+  12            */
+  13          
+  14          void AT24C02_WhiteByte(unsigned char WordAddress,Data)
+  15          {
+  16   1              I2C_Start();                                                                    //开始I2C通信
+  17   1              I2C_SendByte(AT24C02_ADDRESS);                                  //主机发送从设备（AT24C02）的地址
+  18   1              I2C_ReceiveAck();                                                               //主机接收AT24C02的应答,建立通信
+  19   1              I2C_SendByte(WordAddress);                                              //主机向AT24C02发送要写入数据的字地址
+  20   1              I2C_ReceiveAck();                                                               //主机接收AT24C02的应答
+  21   1              I2C_SendByte(Data);                                                             //主机向AT24C02发送要写入数据
+  22   1              I2C_ReceiveAck();                                                               //主机接收AT24C02的应答
+  23   1              I2C_Stop();                                                                             //结束I2C通信
+  24   1              Delay(5);
+  25   1      }
+  26          
+  27          /**
+  28            * @brief      从AT24C02中读取一个字节
+  29            * @param  WordAddress 要读取字节的地址（0~255）
+  30            * @retval 读出的数据
+  31            */
+  32          
+  33          unsigned char AT24C02_ReadByte(unsigned char WordAddress)
+  34          {
+  35   1              unsigned char Data;
+  36   1              
+  37   1              I2C_Start();                                                                    //开始I2C通信
+  38   1              I2C_SendByte(AT24C02_ADDRESS);                                  //主机发送从设备（AT24C02）的地址
+  39   1              I2C_ReceiveAck();                                                               //主机接收AT24C02的应答,建立通信
+  40   1              I2C_SendByte(WordAddress);                                              //主机向AT24C02发送要读出数据的字地址
+  41   1              I2C_ReceiveAck();                                                               //主机接收AT24C02的应答
+  42   1              I2C_Start();                                                                    //开始I2C通信
+  43   1              I2C_SendByte(AT24C02_ADDRESS|0x01);                             //主机发送从设备（AT24C02）读的地址
+  44   1              I2C_ReceiveAck();                                                               //主机接收AT24C02的应答
+  45   1              Data = I2C_ReceiveByte();                                               //主机读取数据
+  46   1              I2C_SendAck(1);                                                                 //主机向AT24C02发送应答
+  47   1              I2C_Stop();                                                                             //结束I2C通信
+  48   1              
+  49   1              return Data;                                                                    //返回读取的数据
+  50   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     91    ----
+C51 COMPILER V9.54   AT24C02                                                               05/20/2025 17:21:47 PAGE 2   
+
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       5
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
